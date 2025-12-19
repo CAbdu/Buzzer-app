@@ -1,5 +1,5 @@
 # Guide de Contribution - Projet Buzzer
-
+ 
 ## 📋 Table des Matières
 - [Workflow Git](#workflow-git)
 - [Convention de Commits](#convention-de-commits)
@@ -18,8 +18,11 @@
 git clone https://github.com/CAbdu/Buzzer-app.git
 cd Buzzer-app
 
-# Installer les dépendances (installe aussi Husky)
+# Installer les dépendances du repo (outillage: Husky, lint-staged, commitlint)
 npm install
+
+# Installer les dépendances du frontend (Vite/React)
+npm --prefix Buzzer-app install
 
 # Créer votre branche de travail
 git checkout -b feature/nom-de-votre-feature
@@ -43,8 +46,8 @@ git status
 git diff
 
 # 5. Ajouter vos fichiers (éviter "git add .")
-git add src/components/Buzzer.tsx
-git add src/services/socket.ts
+git add Buzzer-app/src/components/Buzzer.tsx
+git add Buzzer-app/src/services/socket.ts
 
 # 6. Commit (les hooks se déclenchent automatiquement)
 git commit -m "feat(buzzer): add visual feedback on press"
@@ -196,7 +199,7 @@ git rebase origin/main
 # Checklist pré-PR
 ✓ Tous les tests passent localement
 ✓ Le code est linté (pas d'erreurs ESLint)
-✓ Le code est formaté (Prettier)
+✓ Le code est formaté (selon les règles du projet)
 ✓ La documentation est à jour
 ✓ Les commits suivent la convention
 ✓ La branche est à jour avec main
@@ -272,58 +275,34 @@ npm install
 npm run prepare
 ```
 
+Note: ce repo contient deux `package.json`.
+
+- **À la racine**: outillage (Husky, commitlint, lint-staged)
+- **Dans `Buzzer-app/`**: application frontend (Vite/React)
+
 ### Hooks Configurés
 
 #### Pre-commit (avant chaque commit)
 
-```json
-// .husky/pre-commit
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Lance lint-staged
-npx lint-staged
+```sh
+# .husky/pre-commit
+npx --no-install lint-staged --config package.json
 ```
 
 #### Commit-msg (validation du message)
 
-```json
-// .husky/commit-msg
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Valide le format Conventional Commits
-npx --no -- commitlint --edit $1
-```
-
-#### Pre-push (avant chaque push)
-
-```json
-// .husky/pre-push
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-# Lance les tests
-npm run test
-
-# Lance le build
-npm run build
+```sh
+# .husky/commit-msg
+npx --no-install commitlint --edit "$1" --config Buzzer-app/commitlint.config.js
 ```
 
 ### Configuration lint-staged
 
 ```json
-// package.json
+// package.json (racine)
 {
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write",
-      "vitest related --run"
-    ],
-    "*.{json,md,css}": [
-      "prettier --write"
-    ]
+    "Buzzer-app/**/*.{js,jsx,ts,tsx}": "npm --prefix Buzzer-app run lint:staged --"
   }
 }
 ```
@@ -341,21 +320,14 @@ git push --no-verify
 ### Package.json Scripts
 
 ```json
+// Buzzer-app/package.json (frontend)
 {
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\"",
-    "type-check": "tsc --noEmit",
-    "validate": "npm run type-check && npm run lint && npm run test && npm run build",
-    "prepare": "husky install"
+    "lint": "eslint .",
+    "lint:staged": "eslint --max-warnings=0"
   }
 }
 ```
@@ -363,23 +335,17 @@ git push --no-verify
 ### Commandes Utiles
 
 ```bash
-# Vérifier tout avant de pousser
-npm run validate
+# Lancer le frontend
+npm --prefix Buzzer-app run dev
 
-# Corriger automatiquement le formatage
-npm run format
+# Linter le frontend
+npm --prefix Buzzer-app run lint
 
-# Corriger les problèmes ESLint
-npm run lint:fix
+# Build production du frontend
+npm --prefix Buzzer-app run build
 
-# Vérifier les types TypeScript
-npm run type-check
-
-# Lancer les tests en mode watch
-npm run test
-
-# Voir la couverture des tests
-npm run test:coverage
+# (Re)générer les hooks Husky si nécessaire
+npm run prepare
 ```
 
 ## 👀 Code Review
@@ -485,10 +451,9 @@ jobs:
         with:
           node-version: '18'
       - run: npm ci
-      - run: npm run type-check
-      - run: npm run lint
-      - run: npm run test
-      - run: npm run build
+      - run: npm --prefix Buzzer-app ci
+      - run: npm --prefix Buzzer-app run lint
+      - run: npm --prefix Buzzer-app run build
 ```
 
 ### Badges à Ajouter au README
@@ -510,10 +475,11 @@ jobs:
 ### Hooks Husky ne se déclenchent pas
 
 ```bash
-# Réinstaller Husky
-rm -rf .husky
+# Vérifier la config Git
+git config core.hooksPath
+
+# Réinstaller les hooks (Husky v9+)
 npm run prepare
-chmod +x .husky/*
 ```
 
 ### Commitlint échoue
@@ -531,8 +497,8 @@ git commit --amend -m "feat(scope): correct message"
 ```bash
 # Reproduire l'environnement CI
 rm -rf node_modules
-npm ci
-npm run test
+npm --prefix Buzzer-app ci
+npm --prefix Buzzer-app run build
 ```
 
 ---

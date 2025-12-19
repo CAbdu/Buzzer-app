@@ -1,16 +1,16 @@
 # Agent Guidelines - Projet Buzzer Multi-Joueurs
 
-## 🎯 Vue d'Ensemble du Projet
+## Vue d'Ensemble du Projet
 
 Application de buzzer en temps réel permettant à plusieurs joueurs sur mobile de s'affronter. Le premier à appuyer sur son buzzer est identifié visuellement par un changement de couleur.
 
-## 🏗️ Architecture Technique
+## Architecture Technique
 
 ### Stack
-- **Frontend**: React 18+ avec TypeScript, Vite, Tailwind CSS
-- **Backend**: Node.js + Express + Socket.io
-- **Déploiement**: PWA pour l'expérience mobile
-- **État**: Zustand ou Context API avec synchronisation WebSocket
+- **Frontend**: React (TypeScript) avec Vite
+- **Backend (cible)**: Node.js + Express + Socket.io
+- **Déploiement (cible)**: PWA pour l'expérience mobile
+- **État (cible)**: Zustand ou Context API avec synchronisation WebSocket
 
 ### Structure des Dossiers
 ```
