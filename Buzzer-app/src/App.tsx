@@ -1,24 +1,24 @@
 import { useMemo, useState } from 'react'
 import './App.css'
-
-function generateSessionCode() {
-  return String(Math.floor(100000 + Math.random() * 900000))
-}
-
-function normalizeCode(value: string) {
-  return value.replace(/\D/g, '').slice(0, 6)
-}
+import Buzzer from './buzzer'
+import { generateSessionCode, isValidSessionCode, normalizeSessionCode } from './session'
 
 function App() {
   const [createdCode, setCreatedCode] = useState<string | null>(null)
   const [joinCode, setJoinCode] = useState('')
   const [joinError, setJoinError] = useState<string | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
+  const [screen, setScreen] = useState<'home' | 'buzzer'>('home')
+  const [activeSessionCode, setActiveSessionCode] = useState<string | null>(null)
+  const [playerLabel, setPlayerLabel] = useState<'Hôte' | 'Joueur'>('Joueur')
 
   const title = useMemo(() => 'Buzzer', [])
 
   const onCreateSession = () => {
-    setCreatedCode(generateSessionCode())
+    const code = generateSessionCode()
+    setCreatedCode(code)
+    setActiveSessionCode(code)
+    setPlayerLabel('Hôte')
     setCopyState('idle')
     setJoinError(null)
   }
@@ -37,11 +37,28 @@ function App() {
 
   const onJoinSession = () => {
     setJoinError(null)
-    if (joinCode.length !== 6) {
+    if (!isValidSessionCode(joinCode)) {
       setJoinError('Entre un code à 6 chiffres.')
       return
     }
-    alert(`Join session: ${joinCode}`)
+    setActiveSessionCode(joinCode)
+    setPlayerLabel('Joueur')
+    setScreen('buzzer')
+  }
+
+  const onGoToBuzzer = () => {
+    if (!activeSessionCode) return
+    setScreen('buzzer')
+  }
+
+  if (screen === 'buzzer') {
+    return (
+      <Buzzer
+        sessionCode={activeSessionCode}
+        playerLabel={playerLabel}
+        onBack={() => setScreen('home')}
+      />
+    )
   }
 
   return (
@@ -70,6 +87,14 @@ function App() {
                 </button>
               </div>
             ) : null}
+
+            {createdCode ? (
+              <div className="homeActions">
+                <button className="btnPrimary" type="button" onClick={onGoToBuzzer}>
+                  Aller au buzzer
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="homeDivider" />
@@ -86,7 +111,7 @@ function App() {
                 placeholder="123456"
                 aria-label="Code de session"
                 value={joinCode}
-                onChange={(e) => setJoinCode(normalizeCode(e.target.value))}
+                onChange={(e) => setJoinCode(normalizeSessionCode(e.target.value))}
               />
               <button className="btnPrimary" type="button" onClick={onJoinSession}>
                 Rejoindre
