@@ -13,3 +13,4 @@ export function isValidSessionCode(value: string) {
 export function isValidSessionPassword(value: string) {
   return isValidSessionCode(value)
 }
+

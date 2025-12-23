@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+
 type BuzzerProps = {
   sessionCode?: string | null
   onBack?: () => void
   playerLabel?: string
+  playerName: string
 }
 
-export default function Buzzer({ sessionCode, onBack, playerLabel = 'Joueur' }: BuzzerProps) {
+export default function Buzzer({ sessionCode, onBack, playerLabel, playerName = 'Joueur' }: BuzzerProps) {
   const [isPressed, setIsPressed] = useState(false)
   const releaseTimeoutRef = useRef<number | null>(null)
 
@@ -59,7 +61,7 @@ export default function Buzzer({ sessionCode, onBack, playerLabel = 'Joueur' }: 
         </div>
 
         <div className="buzzerHeaderCenter">
-          <div className="buzzerTitle">{playerLabel}</div>
+          <div className="buzzerTitle">{ playerName || playerLabel }</div>
           {sessionCode ? <div className="buzzerSession">Session {sessionCode}</div> : null}
         </div>
 

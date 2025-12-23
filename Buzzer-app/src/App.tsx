@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import './App.css'
+
 import Buzzer from './buzzer'
 import { generateSessionCode, isValidSessionCode, normalizeSessionCode } from './session'
+import PlayerNameInput from './components/PlayerNameInput' 
 
 function App() {
   const [createdCode, setCreatedCode] = useState<string | null>(null)
@@ -11,6 +12,7 @@ function App() {
   const [screen, setScreen] = useState<'home' | 'buzzer'>('home')
   const [activeSessionCode, setActiveSessionCode] = useState<string | null>(null)
   const [playerLabel, setPlayerLabel] = useState<'Hôte' | 'Joueur'>('Joueur')
+  const [playerName, setPlayerName] = useState('')
 
   const title = useMemo(() => 'Buzzer', [])
 
@@ -51,11 +53,14 @@ function App() {
     setScreen('buzzer')
   }
 
+  // Mise à jour de la fonction de gestion du nom du joueur
+
   if (screen === 'buzzer') {
     return (
       <Buzzer
         sessionCode={activeSessionCode}
         playerLabel={playerLabel}
+        playerName={playerName}
         onBack={() => setScreen('home')}
       />
     )
@@ -68,7 +73,14 @@ function App() {
       </header>
 
       <main className="appMain">
+        <PlayerNameInput  
+            value={playerName}
+            onChange={setPlayerName}
+          />
         <section className="homeCard" aria-label="Gestion des sessions">
+          {/* Ajout du composant PlayerNameInput au-dessus de homeBlock */}
+          
+
           <div className="homeBlock">
             <h2 className="homeBlockTitle">Créer une session</h2>
             <p className="homeBlockText">Génère un code à 6 chiffres pour inviter des joueurs.</p>
