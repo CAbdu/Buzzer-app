@@ -3,6 +3,12 @@ import { useMemo, useState } from 'react'
 import Buzzer from './buzzer'
 import { generateSessionCode, isValidSessionCode, normalizeSessionCode } from './session'
 import PlayerNameInput from './components/PlayerNameInput' 
+import { 
+  createSession, 
+  joinSession, 
+  deleteSession, 
+  checkSessionExists 
+} from './firebaseService'
 
 function App() {
   const [createdCode, setCreatedCode] = useState<string | null>(null)
@@ -13,16 +19,33 @@ function App() {
   const [activeSessionCode, setActiveSessionCode] = useState<string | null>(null)
   const [playerLabel, setPlayerLabel] = useState<'Hôte' | 'Joueur'>('Joueur')
   const [playerName, setPlayerName] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const title = useMemo(() => 'Buzzer', [])
 
-  const onCreateSession = () => {
+  const onCreateSession = async () => {
+    if (!playerName.trim()) {
+      setJoinError('Entre ton nom avant de créer une session')
+      return
+    }
+
+ setIsLoading(true)
     const code = generateSessionCode()
-    setCreatedCode(code)
-    setActiveSessionCode(code)
-    setPlayerLabel('Hôte')
-    setCopyState('idle')
-    setJoinError(null)
+
+      // Créer la session dans Firebase
+    const result = await createSession(code, playerName)
+
+    if (result.success) {
+      setCreatedCode(code)
+      setActiveSessionCode(code)
+      setPlayerLabel('Hôte')
+      setCopyState('idle')
+      setJoinError(null)
+    } else {
+      setJoinError('Erreur lors de la création de la session')
+    }
+    
+    setIsLoading(false)
   }
 
   const onCopyCode = async () => {
@@ -30,30 +53,68 @@ function App() {
     try {
       await navigator.clipboard.writeText(createdCode)
       setCopyState('copied')
-      window.setTimeout(() => setCopyState('idle'), 1200)
+      setTimeout(() => setCopyState('idle'), 1200)
     } catch {
       setCopyState('error')
-      window.setTimeout(() => setCopyState('idle'), 2000)
+      setTimeout(() => setCopyState('idle'), 2000)
     }
   }
 
-  const onJoinSession = () => {
+  const onJoinSession = async () => {
     setJoinError(null)
+
+    if (!playerName.trim()) {
+      setJoinError('Entre ton nom avant de rejoindre')
+      return
+    }
+
     if (!isValidSessionCode(joinCode)) {
       setJoinError('Entre un code à 6 chiffres.')
       return
     }
-    setActiveSessionCode(joinCode)
-    setPlayerLabel('Joueur')
-    setScreen('buzzer')
-  }
 
+    setIsLoading(true)
+
+    const exists = await checkSessionExists(joinCode)
+    
+    if (!exists) {
+      setJoinError('Cette session n\'existe pas ou a expiré.')
+      setIsLoading(false)
+      return
+    }
+
+     // Rejoindre la session
+    const result = await joinSession(joinCode, playerName)
+    
+    if (result.success) {
+      setActiveSessionCode(joinCode)
+      setPlayerLabel('Joueur')
+      setScreen('buzzer')
+      setJoinError(null)
+    } else {
+      setJoinError(result.error)
+    }
+    
+    setIsLoading(false)
+  }
+  
   const onGoToBuzzer = () => {
     if (!activeSessionCode) return
     setScreen('buzzer')
   }
 
-  // Mise à jour de la fonction de gestion du nom du joueur
+const onBackToHome = async () => {
+    // Si l'utilisateur est l'hôte, supprimer la session
+    if (playerLabel === 'Hôte' && activeSessionCode) {
+      await deleteSession(activeSessionCode)
+    }
+    
+    setScreen('home')
+    setActiveSessionCode(null)
+    setCreatedCode(null)
+    setJoinCode('')
+    setJoinError(null)
+  }
 
   if (screen === 'buzzer') {
     return (
@@ -61,7 +122,7 @@ function App() {
         sessionCode={activeSessionCode}
         playerLabel={playerLabel}
         playerName={playerName}
-        onBack={() => setScreen('home')}
+        onBack={onBackToHome}
       />
     )
   }
@@ -77,17 +138,19 @@ function App() {
             value={playerName}
             onChange={setPlayerName}
           />
-        <section className="homeCard" aria-label="Gestion des sessions">
-          {/* Ajout du composant PlayerNameInput au-dessus de homeBlock */}
-          
 
+        <section className="homeCard" aria-label="Gestion des sessions">
           <div className="homeBlock">
             <h2 className="homeBlockTitle">Créer une session</h2>
             <p className="homeBlockText">Génère un code à 6 chiffres pour inviter des joueurs.</p>
 
             <div className="homeActions">
-              <button className="btnPrimary" type="button" onClick={onCreateSession}>
-                Créer une session
+              <button className="btnPrimary"
+                type="button" 
+                onClick={onCreateSession}
+                disabled={isLoading || !playerName.trim()}
+                >
+                  {isLoading ? 'Création...' : 'Créer une session'}
               </button>
             </div>
 
@@ -125,8 +188,9 @@ function App() {
                 value={joinCode}
                 onChange={(e) => setJoinCode(normalizeSessionCode(e.target.value))}
               />
-              <button className="btnPrimary" type="button" onClick={onJoinSession}>
-                Rejoindre
+              <button className="btnPrimary" type="button" onClick={onJoinSession}
+              disabled={isLoading || !playerName.trim()}>
+                {isLoading ? 'Connexion...' : 'Rejoindre'}
               </button>
             </div>
 
