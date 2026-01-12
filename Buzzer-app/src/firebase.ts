@@ -6,10 +6,10 @@ import { getDatabase } from 'firebase/database'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBNpsxlawK7T57MvFKM4VDpBI94xuu_3NA",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "buzzer-app-3e039.firebaseapp.com",
   databaseURL: "https://buzzer-app-3e039-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "buzzer-app-3e039",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: "buzzer-app-3e039.firebasestorage.app",
   messagingSenderId: "323000208608",
   appId: "1:323000208608:web:c3aa34bef15998affad485"

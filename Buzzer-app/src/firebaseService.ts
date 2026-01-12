@@ -22,6 +22,9 @@ interface SessionData {
       '.sv': string;
     };
   } | null;
+  buzzerStartTime: {
+    '.sv': string;
+  } | null;
 }
 // ========================================
 // 1. CRÉER UNE SESSION
@@ -34,7 +37,8 @@ export const createSession = async (code: string, hostName: string): Promise<Ser
       hostName,
       createdAt: serverTimestamp(), // Timestamp du serveur Firebase
       players: {},
-      buzzerPressed: null
+      buzzerPressed: null,
+      buzzerStartTime: serverTimestamp()
     })
     
     console.log(`✅ Session ${code} créée par ${hostName}`)
@@ -137,7 +141,12 @@ export const pressBuzzer = async (code: string, playerName: string): Promise<Ser
 export const resetBuzzer = async (code: string): Promise<ServiceResult> => {
   try {
     const buzzerRef = ref(database, `sessions/${code}/buzzerPressed`)
+    const startTimeRef = ref(database, `sessions/${code}/buzzerStartTime`)
+    
+    // Réinitialiser uniquement les champs du buzzer
     await set(buzzerRef, null)
+    await set(startTimeRef, serverTimestamp())
+    
     console.log(`🔄 Buzzer réinitialisé pour la session ${code}`)
     return { success: true }
   } catch (error) {
